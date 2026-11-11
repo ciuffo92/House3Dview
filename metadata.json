@@ -1,0 +1,7 @@
+{
+  "name": "Esploratore 3D Casa a Due Piani",
+  "description": "Navigatore 3D in prima persona per Piano Terra e Primo Piano con Three.js basato su planimetrie dettagliate.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
+
