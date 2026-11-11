@@ -6,8 +6,10 @@ export interface FPSControllerOptions {
   camera: THREE.Camera;
   domElement: HTMLElement;
   colliderBoxes: THREE.Box3[];
+  passThroughInteriorWalls?: boolean;
   onFloorChange?: (floor: FloorId) => void;
   onRoomChange?: (roomName: string) => void;
+  onGhostModeChange?: (enabled: boolean) => void;
 }
 
 export class FPSController {
@@ -25,6 +27,7 @@ export class FPSController {
   public position = new THREE.Vector3(-0.5, 1.6, 3.2); // Start in Entrance Flur
   public velocity = new THREE.Vector3();
   public currentFloor: FloorId = 'ground';
+  public passThroughInteriorWalls = true; // User request: pass through interior walls freely!
 
   private moveForward = false;
   private moveBackward = false;
@@ -35,6 +38,7 @@ export class FPSController {
   private euler = new THREE.Euler(0, 0, 0, 'YXZ');
   private colliderBoxes: THREE.Box3[] = [];
   private onFloorChange?: (floor: FloorId) => void;
+  private onGhostModeChange?: (enabled: boolean) => void;
 
   // Web Audio footstep generator
   private audioCtx: AudioContext | null = null;
@@ -45,7 +49,11 @@ export class FPSController {
     this.camera = options.camera;
     this.domElement = options.domElement;
     this.colliderBoxes = options.colliderBoxes;
+    if (options.passThroughInteriorWalls !== undefined) {
+      this.passThroughInteriorWalls = options.passThroughInteriorWalls;
+    }
     this.onFloorChange = options.onFloorChange;
+    this.onGhostModeChange = options.onGhostModeChange;
 
     this.camera.position.copy(this.position);
     this.euler.setFromQuaternion(this.camera.quaternion);
@@ -197,6 +205,18 @@ export class FPSController {
       case 'ShiftRight':
         this.isSprinting = true;
         break;
+      case 'KeyG':
+        this.passThroughInteriorWalls = !this.passThroughInteriorWalls;
+        this.onGhostModeChange?.(this.passThroughInteriorWalls);
+        break;
+      case 'Digit1':
+      case 'Numpad1':
+        this.teleport(this.position.x, 0, this.position.z, 'ground');
+        break;
+      case 'Digit2':
+      case 'Numpad2':
+        this.teleport(this.position.x, 3.0, this.position.z, 'first');
+        break;
     }
   }
 
@@ -310,11 +330,14 @@ export class FPSController {
     let allowedX = nextX;
     let allowedZ = nextZ;
 
-    // Inside the stair shaft: clamp lateral X between side balustrades, allow free North/South ascent/descent
+    // Inside the stair shaft: clamp lateral X between side balustrades (if solid), allow free North/South ascent/descent
     if (inStairArea) {
-      allowedX = Math.max(stair.minX + 0.15, Math.min(stair.maxX - 0.15, nextX));
+      if (!this.passThroughInteriorWalls) {
+        allowedX = Math.max(stair.minX + 0.15, Math.min(stair.maxX - 0.15, nextX));
+      }
       allowedZ = nextZ; // Free movement along stair incline
-    } else {
+    } else if (!this.passThroughInteriorWalls) {
+      // Solid walls mode: perform full collision testing against all interior walls, doors & furniture
       const isPlayerUpper = targetGroundY > 1.8;
 
       // Test X move
@@ -323,10 +346,7 @@ export class FPSController {
         new THREE.Vector3(allowedX + radius, targetGroundY + 1.5, this.position.z + radius)
       );
       for (const col of this.colliderBoxes) {
-        // STRICT vertical level filtering:
-        // Upper floor player ignores all ground-floor colliders (ceiling is 3.0m, ground walls max.y <= 2.85m)
         if (isPlayerUpper && col.max.y <= 2.85) continue;
-        // Ground floor player ignores all first-floor colliders (first floor min.y >= 2.85m)
         if (!isPlayerUpper && col.min.y >= 2.85) continue;
 
         if (testBoxX.intersectsBox(col)) {
@@ -353,7 +373,7 @@ export class FPSController {
       }
     }
 
-    // Clamp inside outer building bounds
+    // Always clamp strictly inside outer building bounds so player never leaves the house perimeter
     allowedX = Math.max(HOUSE_DIMENSIONS.minX + 0.35, Math.min(HOUSE_DIMENSIONS.maxX - 0.35, allowedX));
     allowedZ = Math.max(HOUSE_DIMENSIONS.minZ + 0.35, Math.min(HOUSE_DIMENSIONS.maxZ - 0.35, allowedZ));
 

@@ -21,6 +21,7 @@ export default function App() {
   const [viewMode, setViewMode] = useState<CameraViewMode>('fps');
   const [showCeilings, setShowCeilings] = useState(true);
   const [nightMode, setNightMode] = useState(false);
+  const [ghostMode, setGhostMode] = useState(true); // User request: pass through interior walls freely by default
 
   // Three.js References
   const fpsControllerRef = useRef<FPSController | null>(null);
@@ -36,16 +37,24 @@ export default function App() {
     const container = mountRef.current;
     if (!container) return;
 
-    // Detect software WebGL
+    // Safely detect software WebGL
     const isSoftwareGl = (() => {
-      const gl = document.createElement('canvas').getContext('webgl2');
-      if (!gl) return true;
-      const ext = gl.getExtension('WEBGL_debug_renderer_info');
-      const param = ext ? ext.UNMASKED_RENDERER_WEBGL : gl.RENDERER;
-      const gpu = String(gl.getParameter(param));
-      gl.getExtension('WEBGL_lose_context')?.loseContext();
-      return /SwiftShader|llvmpipe|softpipe|Software|Basic Render/i.test(gpu);
+      try {
+        const gl = document.createElement('canvas').getContext('webgl2') || document.createElement('canvas').getContext('webgl');
+        if (!gl) return false;
+        const ext = gl.getExtension('WEBGL_debug_renderer_info');
+        const param = ext ? ext.UNMASKED_RENDERER_WEBGL : (gl as any).RENDERER;
+        const gpu = param ? String(gl.getParameter(param)) : '';
+        gl.getExtension('WEBGL_lose_context')?.loseContext();
+        return /SwiftShader|llvmpipe|softpipe|Software|Basic Render/i.test(gpu);
+      } catch {
+        return false;
+      }
     })();
+
+    // Robust dimension calculation (prevents 0 height / NaN aspect ratio crash)
+    const initialWidth = container.clientWidth > 0 ? container.clientWidth : window.innerWidth;
+    const initialHeight = container.clientHeight > 0 ? container.clientHeight : window.innerHeight;
 
     // Scene with bright realistic daylight exterior horizon
     const scene = new THREE.Scene();
@@ -56,7 +65,7 @@ export default function App() {
     // Camera (eyeHeight: 1.6m)
     const camera = new THREE.PerspectiveCamera(
       75,
-      container.clientWidth / container.clientHeight,
+      initialWidth / Math.max(initialHeight, 1),
       0.1,
       120
     );
@@ -68,19 +77,23 @@ export default function App() {
       antialias: true,
       powerPreference: 'high-performance',
     });
-    renderer.setSize(container.clientWidth, container.clientHeight);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.setSize(initialWidth, initialHeight);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
     renderer.toneMappingExposure = 1.3;
-    renderer.shadowMap.enabled = true; // Always enabled for AAA realism
+    renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     container.appendChild(renderer.domElement);
 
-    // Procedural RoomEnvironment for PBR reflections
-    const pmremGenerator = new THREE.PMREMGenerator(renderer);
-    scene.environment = pmremGenerator.fromScene(new RoomEnvironment(), 0.04).texture;
-    pmremGenerator.dispose();
+    // Procedural RoomEnvironment for PBR reflections (with try-catch fallback)
+    try {
+      const pmremGenerator = new THREE.PMREMGenerator(renderer);
+      scene.environment = pmremGenerator.fromScene(new RoomEnvironment(), 0.04).texture;
+      pmremGenerator.dispose();
+    } catch (e) {
+      console.warn('PMREM environment generation skipped:', e);
+    }
 
     // Lighting (Next-Gen AAA Interior)
     // 1. Light sky bounce fill
@@ -137,8 +150,12 @@ export default function App() {
       camera,
       domElement: container,
       colliderBoxes,
+      passThroughInteriorWalls: ghostMode,
       onFloorChange: (floor) => {
         setCurrentFloor(floor);
+      },
+      onGhostModeChange: (enabled) => {
+        setGhostMode(enabled);
       },
     });
     fpsControllerRef.current = fpsController;
@@ -154,9 +171,11 @@ export default function App() {
     // Window resize
     const handleResize = () => {
       if (!container) return;
-      camera.aspect = container.clientWidth / container.clientHeight;
+      const w = container.clientWidth > 0 ? container.clientWidth : window.innerWidth;
+      const h = container.clientHeight > 0 ? container.clientHeight : window.innerHeight;
+      camera.aspect = w / Math.max(h, 1);
       camera.updateProjectionMatrix();
-      renderer.setSize(container.clientWidth, container.clientHeight);
+      renderer.setSize(w, h);
     };
     window.addEventListener('resize', handleResize);
 
@@ -331,6 +350,15 @@ export default function App() {
     }
   };
 
+  // Ghost Mode (Pass through interior walls) Toggle
+  const handleToggleGhostMode = () => {
+    const next = !ghostMode;
+    setGhostMode(next);
+    if (fpsControllerRef.current) {
+      fpsControllerRef.current.passThroughInteriorWalls = next;
+    }
+  };
+
   // Standalone HTML Download
   const handleDownloadHtml = () => {
     const htmlContent = generateStandaloneHtml();
@@ -366,11 +394,13 @@ export default function App() {
         viewMode={viewMode}
         showCeilings={showCeilings}
         nightMode={nightMode}
+        ghostMode={ghostMode}
         onLockPointer={() => fpsControllerRef.current?.lock()}
         onTeleport={handleTeleport}
         onToggleViewMode={handleToggleViewMode}
         onToggleCeilings={handleToggleCeilings}
         onToggleNightMode={handleToggleNightMode}
+        onToggleGhostMode={handleToggleGhostMode}
         onDownloadHtml={handleDownloadHtml}
         onCopyHtml={handleCopyHtml}
       />

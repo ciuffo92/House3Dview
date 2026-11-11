@@ -13,6 +13,7 @@ import {
   ChevronDown,
   ChevronUp,
   Check,
+  Ghost,
 } from 'lucide-react';
 
 interface HUDProps {
@@ -24,11 +25,13 @@ interface HUDProps {
   viewMode: CameraViewMode;
   showCeilings: boolean;
   nightMode: boolean;
+  ghostMode: boolean;
   onLockPointer: () => void;
   onTeleport: (target: 'ground' | 'first' | 'living' | 'kitchen' | 'master' | 'stairs' | 'kind2') => void;
   onToggleViewMode: () => void;
   onToggleCeilings: () => void;
   onToggleNightMode: () => void;
+  onToggleGhostMode: () => void;
   onDownloadHtml: () => void;
   onCopyHtml: () => void;
 }
@@ -42,11 +45,13 @@ export const HUD: React.FC<HUDProps> = ({
   viewMode,
   showCeilings,
   nightMode,
+  ghostMode,
   onLockPointer,
   onTeleport,
   onToggleViewMode,
   onToggleCeilings,
   onToggleNightMode,
+  onToggleGhostMode,
   onDownloadHtml,
   onCopyHtml,
 }) => {
@@ -80,6 +85,11 @@ export const HUD: React.FC<HUDProps> = ({
         >
           {currentFloor === 'ground' ? 'Piano Terra' : 'Primo Piano'}
         </span>
+        {ghostMode && (
+          <span className="flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-bold uppercase tracking-wider bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">
+            <Ghost className="w-3 h-3 text-emerald-400" /> Ghost
+          </span>
+        )}
         <div className="flex flex-col">
           <span className="text-sm font-semibold text-slate-100">{currentRoom}</span>
           <span className="text-[11px] text-slate-400">
@@ -163,6 +173,14 @@ export const HUD: React.FC<HUDProps> = ({
                   1 / 2
                 </span>
                 <span>Piano Terra / 1° Piano</span>
+              </div>
+              <div className="flex items-center gap-2 col-span-2 bg-emerald-950/40 border border-emerald-800/50 p-1.5 rounded-lg">
+                <span className="font-mono bg-emerald-800 text-emerald-200 px-2 py-0.5 rounded font-semibold text-[11px]">
+                  G
+                </span>
+                <span className="text-emerald-300 font-medium text-[11px]">
+                  Attraversa Muri Interni (Ghost Mode ON/OFF)
+                </span>
               </div>
             </div>
 
@@ -250,6 +268,19 @@ export const HUD: React.FC<HUDProps> = ({
 
             {/* View & Lighting Toggles */}
             <div className="flex items-center gap-1.5 border-l border-slate-700/80 pl-2.5">
+              <button
+                onClick={onToggleGhostMode}
+                className={`text-xs px-2.5 py-1.5 rounded-lg border flex items-center gap-1.5 transition-all font-medium ${
+                  ghostMode
+                    ? 'bg-emerald-500/25 text-emerald-300 border-emerald-400/60 shadow-[0_0_10px_rgba(16,185,129,0.25)]'
+                    : 'bg-slate-800 hover:bg-slate-700 text-slate-300 border-slate-700'
+                }`}
+                title="Attiva/Disattiva attraversamento muri interni (Tasto G)"
+              >
+                <Ghost className={`w-3.5 h-3.5 ${ghostMode ? 'text-emerald-400 animate-pulse' : 'text-slate-400'}`} />
+                {ghostMode ? 'Muri Passanti ON' : 'Muri Solidi'}
+              </button>
+
               <button
                 onClick={onToggleViewMode}
                 className={`text-xs px-2.5 py-1.5 rounded-lg border flex items-center gap-1.5 transition-colors ${

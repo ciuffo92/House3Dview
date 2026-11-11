@@ -231,7 +231,8 @@ export function generateStandaloneHtml(): string {
     <button class="dock-btn" onclick="teleportTo('kitchen')">🍳 Cucina & Isola Marmo</button>
     <button class="dock-btn" onclick="teleportTo('master')">🛏️ Camera Master</button>
     <button class="dock-btn" onclick="teleportTo('kind2')">🧸 Camera 2</button>
-    <button class="dock-btn" onclick="toggleCeilings()">🏠 Soffitto / Tetto: <span id="roof-label">Attivo</span></button>
+    <button id="ghost-btn" class="dock-btn" onclick="toggleGhostMode()" style="background:#065f46;border-color:#10b981;color:#6ee7b7">👻 Muri Passanti: ON (G)</button>
+    <button class="dock-btn" onclick="toggleCeilings()">🏠 Soffitto: <span id="roof-label">Attivo</span></button>
   </div>
 
   <!-- Schermata Istruzioni -->
@@ -247,6 +248,7 @@ export function generateStandaloneHtml(): string {
         <div class="key-item"><span class="kbd">Shift</span> <span>Corsa accelerata</span></div>
         <div class="key-item"><span class="kbd">Scale</span> <span>Sali liberamente al 1° piano</span></div>
         <div class="key-item"><span class="kbd">1 / 2</span> <span>Teletrasporto rapido piani</span></div>
+        <div class="key-item"><span class="kbd">G</span> <span>Attraversa Muri Interni (Ghost)</span></div>
         <div class="key-item"><span class="kbd">ESC</span> <span>Pausa / Sblocca mouse</span></div>
       </div>
 
@@ -556,8 +558,19 @@ export function generateStandaloneHtml(): string {
     buildWall(-5.4, -1.0, -1.9, -1.0, 0, 2.8, 0.16, true, 0.45, 0.9);
     buildWall(-5.4, 0.4, -1.9, 0.4, 0, 2.8, 0.16);
     buildWall(-5.4, 2.8, -1.9, 2.8, 0, 2.8, 0.16, true, 0.5, 0.9);
-    buildWall(0.8, 0.1, 0.8, 4.3, 0, 2.8, 0.18, true, 0.4, 0.95);
-    buildWall(0.8, 3.0, 2.0, 3.0, 0, 2.8, 0.16, true, 0.5, 0.85);
+
+    // Scala muri: Ovest con porta accesso sottoscala (Z: -0.8 a 1.8), Est solido, Nord chiusura
+    buildWall(-0.2, -0.8, -0.2, 1.8, 0, 2.8, 0.15, true, 0.35, 0.8);
+    buildWall(1.0, -0.8, 1.0, 1.8, 0, 2.8, 0.15);
+    buildWall(-0.2, -0.8, 1.0, -0.8, 0, 2.8, 0.15); // Parete posteriore Nord che chiude il sottoscala!
+
+    // Muro separazione tra Flur e Bagno WC ospiti sulla destra (ACCESSO DIRETTO DALL'INGRESSO)
+    buildWall(0.8, 3.0, 0.8, 4.3, 0, 2.8, 0.18, true, 0.5, 0.85);
+    // Parete divisoria Bagno WC ospiti e soggiorno alloggio ospiti (SOLIDA, isola il bagno)
+    buildWall(0.8, 3.0, 2.0, 3.0, 0, 2.8, 0.16);
+    // Spina separazione Casa Principale / Alloggio Ospiti
+    buildWall(0.8, 0.1, 0.8, 1.8, 0, 2.8, 0.18);
+    buildWall(0.8, 1.8, 0.8, 3.0, 0, 2.8, 0.18, true, 0.5, 0.9);
     buildWall(1.0, 0.1, 5.4, 0.1, 0, 2.8, 0.18);
     buildWall(2.7, 0.1, 2.7, 1.6, 0, 2.8, 0.16, true, 0.5, 0.85);
     buildWall(2.7, 1.6, 5.4, 1.6, 0, 2.8, 0.16);
@@ -574,7 +587,6 @@ export function generateStandaloneHtml(): string {
       const stepY = i * stepRise;
       const stepZ = stairZ2 - (i + 0.5) * stepRun;
       const stepX = (stairX1 + stairX2) / 2;
-
       const tread = new THREE.Mesh(new THREE.BoxGeometry(stairW, 0.04, stepRun + 0.02), oakMat);
       tread.position.set(stepX, stepY + stepRise - 0.02, stepZ);
       tread.castShadow = true;
@@ -586,8 +598,16 @@ export function generateStandaloneHtml(): string {
       houseGroup.add(riser);
     }
 
-    const handrail = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, Math.hypot(stairZ2 - stairZ1, 3.0), 12), frameMat);
-    handrail.rotation.x = Math.PI / 2 + Math.atan2(3.0, stairZ2 - stairZ1);
+    // Chiusura soffitto sottoscala inclinato
+    const soffitLen = Math.hypot(stairZ2 - stairZ1, 3.0);
+    const soffitAng = Math.atan2(3.0, stairZ2 - stairZ1);
+    const underSoffit = new THREE.Mesh(new THREE.BoxGeometry(stairW, 0.08, soffitLen), wallMat);
+    underSoffit.rotation.x = -soffitAng;
+    underSoffit.position.set((stairX1 + stairX2) / 2, 1.5 - 0.14, (stairZ1 + stairZ2) / 2);
+    houseGroup.add(underSoffit);
+
+    const handrail = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, soffitLen, 12), frameMat);
+    handrail.rotation.x = Math.PI / 2 + soffitAng;
     handrail.position.set(stairX2 - 0.04, 1.5 + 0.9, (stairZ1 + stairZ2) / 2);
     houseGroup.add(handrail);
 
@@ -605,10 +625,10 @@ export function generateStandaloneHtml(): string {
     // 2. Ala Est: Camera 1 (2.0 a 5.4, Z: -4.3 a -0.8), Studio e Camera 2 (1.0 a 5.4, Z: -0.8 a 4.3)
     addSlab(2.0, 5.4, -4.3, -0.8);
     addSlab(stairX2, 5.4, -0.8, 4.3);
-    // 3. Camminamento Nord Galleria (-1.0 a 2.0, Z: -1.3 a -0.8) e Corridoio Sud (Z: 1.8 a 4.3)
-    addSlab(-1.0, 2.0, -1.3, stairZ1);
+    // 3. Camminamento Nord Galleria Spazioso 1.3m (-1.0 a 2.0, Z: -2.1 a -0.8) e Corridoio Sud (Z: 1.8 a 4.3)
+    addSlab(-1.0, 2.0, -2.1, stairZ1);
     addSlab(stairX1, stairX2, stairZ2, 4.3);
-    // (L'area X: -1.0 a 2.0, Z: -4.3 a -1.3 è il VUOTO a DOPPIA ALTEZZA della Galleria che si affaccia sul tavolo da pranzo di sotto!)
+    // (L'area X: -1.0 a 2.0, Z: -4.3 a -2.1 è il VUOTO a DOPPIA ALTEZZA della Galleria che si affaccia sul tavolo da pranzo di sotto!)
 
     // Parapetti in vetro di sicurezza
     function addGlassRail(x1, z1, x2, z2) {
@@ -628,7 +648,7 @@ export function generateStandaloneHtml(): string {
     }
     addGlassRail(stairX1, stairZ2, stairX1, stairZ1); // Ovest vano scale
     addGlassRail(stairX2, stairZ1, stairX2, 1.4);      // Est vano scale
-    addGlassRail(-1.0, -1.3, 2.0, -1.3);              // Parapetto Galleria affacciato sulla sala da pranzo di sotto
+    addGlassRail(-1.0, -2.1, 2.0, -2.1);              // Parapetto Galleria affacciato sulla sala da pranzo di sotto
 
     // --- Muri Primo Piano (Con Porte Dedicate e Accessi Perfettamente Aperti) ---
     buildWall(-5.4, -4.3, 5.4, -4.3, 3.0, 2.8, 0.36, false, 0, 0, true, true, 2.6, 2.2, 0.2); // Nord vetrata
@@ -636,17 +656,17 @@ export function generateStandaloneHtml(): string {
     buildWall(-5.4, 4.3, 5.4, 4.3, 3.0, 2.8, 0.36, false, 0, 0, true, true, 2.4, 1.6, 0.8);
     buildWall(-5.4, -4.3, -5.4, 4.3, 3.0, 2.8, 0.36, false, 0, 0, true, true, 1.6, 1.4, 1.0);
 
-    // Muri Interni Primo Piano
-    buildWall(-1.0, -4.3, -1.0, -0.8, 3.0, 2.8, 0.18, true, 0.65, 0.95); // Porta Bagno Padronale
+    // Muri Interni Primo Piano (CON AMPIO SPAZIO DI ACCESSO DALLA GALLERIA)
+    buildWall(-1.0, -4.3, -1.0, -0.8, 3.0, 2.8, 0.18, true, 0.82, 0.95); // Porta Bagno Padronale
     buildWall(-5.4, -0.8, -1.0, -0.8, 3.0, 2.8, 0.16);                  // Divisorio Bagno / Cabina Armadio
     buildWall(-1.0, -0.8, -1.0, 1.2, 3.0, 2.8, 0.18, true, 0.5, 1.1);   // Ingresso Cabina Armadio
     buildWall(-5.4, 1.2, -1.0, 1.2, 3.0, 2.8, 0.16);                   // Divisorio Cabina Armadio / Master
     buildWall(-1.0, 1.2, -0.2, 1.2, 3.0, 2.8, 0.18, true, 0.5, 0.75);  // Porta Camera Padronale (Eltern)
-    buildWall(2.0, -4.3, 2.0, -0.8, 3.0, 2.8, 0.18, true, 0.65, 0.95); // Porta Camera 1
+    buildWall(2.0, -4.3, 2.0, -0.8, 3.0, 2.8, 0.18, true, 0.82, 0.95); // Porta Camera 1
     buildWall(2.0, -0.8, 5.4, -0.8, 3.0, 2.8, 0.16);                   // Divisorio Camera 1 / Studio
     buildWall(2.0, -0.8, 2.0, 1.4, 3.0, 2.8, 0.18, true, 0.5, 0.95);  // Porta Studio / Ufficio
     buildWall(2.0, 1.4, 5.4, 1.4, 3.0, 2.8, 0.16);                     // Divisorio Studio / Camera 2
-    buildWall(1.0, 1.4, 2.0, 1.4, 3.0, 2.8, 0.18, true, 0.5, 0.85);   // Porta Camera 2 (Libera nel corridoio est!)
+    buildWall(1.0, 1.4, 2.0, 1.4, 3.0, 2.8, 0.18, true, 0.5, 0.85);   // Porta Camera 2
     buildWall(0.0, 1.8, 0.0, 4.3, 3.0, 2.8, 0.18);                     // Divisorio Sud Eltern / Camera 2
     buildWall(-0.2, 1.8, 1.0, 1.8, 3.0, 2.8, 0.16);                    // Parapetto Sud vano scala
 
@@ -696,16 +716,33 @@ export function generateStandaloneHtml(): string {
     // 3. Galleria 1° Piano: Mezzanino aperto con affaccio diretto sul tavolo da pranzo di sotto
     // Il tavolo al piano superiore non esiste: dalla galleria si vede il tavolo da pranzo sottostante!
 
-    // 4. Bagno Padronale: Vasca freestanding curva, doccia walk-in, mobile doppio lavabo
+    // 4. Bagno Padronale: Vasca freestanding curva, doccia walk-in di lusso, mobile doppio lavabo
     const tub = new THREE.Mesh(new THREE.CylinderGeometry(0.68, 0.52, 0.58, 24), new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.15 }));
     tub.position.set(-2.0, 3.29, -3.6);
     tub.scale.set(1.4, 1.0, 0.85);
     tub.rotation.y = -Math.PI / 6;
     houseGroup.add(tub);
 
-    const shower = new THREE.Mesh(new THREE.BoxGeometry(1.2, 2.2, 1.0), glassMat);
-    shower.position.set(-4.6, 4.1, -1.9);
+    // Doccia Walk-In di Lusso: Piatto doccia a filo, parete in cristallo trasparente, soffione a pioggia
+    const showerTray = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.03, 1.4), new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.6 }));
+    showerTray.position.set(-4.5, 3.015, -2.1);
+    houseGroup.add(showerTray);
+
+    const shower = new THREE.Mesh(new THREE.BoxGeometry(0.025, 2.2, 1.35), glassMat);
+    shower.position.set(-3.9, 4.1, -2.1);
     houseGroup.add(shower);
+
+    const showerHead = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.03, 0.32), frameMat);
+    showerHead.position.set(-4.5, 5.2, -2.1);
+    houseGroup.add(showerHead);
+
+    // Bagno Ospiti al Piano Terra (WC compatto con lavandino e specchio retroilluminato)
+    const guestToilet = new THREE.Mesh(new THREE.BoxGeometry(0.38, 0.42, 0.55), new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.2 }));
+    guestToilet.position.set(1.4, 0.21, 4.0);
+    houseGroup.add(guestToilet);
+    const guestVanity = new THREE.Mesh(new THREE.BoxGeometry(0.45, 0.65, 0.35), lightOakMat);
+    guestVanity.position.set(1.7, 0.45, 3.4);
+    houseGroup.add(guestVanity);
 
     // 5. Cabina Armadio (Ankleidezimmer): Armadiature in rovere bifacciali
     const wardrobeN = new THREE.Mesh(new THREE.BoxGeometry(3.6, 2.2, 0.55), lightOakMat);
@@ -768,6 +805,7 @@ export function generateStandaloneHtml(): string {
       if (e.code === 'ShiftLeft' || e.code === 'ShiftRight') keys.shift = true;
       if (e.code === 'Digit1') teleportTo('ground');
       if (e.code === 'Digit2') teleportTo('first');
+      if (e.code === 'KeyG') toggleGhostMode();
     });
     document.addEventListener('keyup', (e) => {
       if (e.code === 'KeyW' || e.code === 'ArrowUp') keys.w = false;
@@ -776,6 +814,18 @@ export function generateStandaloneHtml(): string {
       if (e.code === 'KeyD' || e.code === 'ArrowRight') keys.d = false;
       if (e.code === 'ShiftLeft' || e.code === 'ShiftRight') keys.shift = false;
     });
+
+    let ghostMode = true;
+    window.toggleGhostMode = function() {
+      ghostMode = !ghostMode;
+      const el = document.getElementById('ghost-btn');
+      if (el) {
+        el.textContent = ghostMode ? '👻 Muri Passanti: ON (G)' : '🧱 Muri Solidi (G)';
+        el.style.background = ghostMode ? '#065f46' : '#1e293b';
+        el.style.borderColor = ghostMode ? '#10b981' : '#334155';
+        el.style.color = ghostMode ? '#6ee7b7' : '#cbd5e1';
+      }
+    };
 
     window.teleportTo = function(target) {
       if (target === 'ground') { currentFloor = 'ground'; playerPos.set(-0.5, eyeHeight, 3.2); }
@@ -877,9 +927,9 @@ export function generateStandaloneHtml(): string {
         let testZ = nextZ;
 
         if (inStairArea) {
-          testX = Math.max(stairX1 + 0.15, Math.min(stairX2 - 0.15, nextX));
+          if (!ghostMode) testX = Math.max(stairX1 + 0.15, Math.min(stairX2 - 0.15, nextX));
           testZ = nextZ;
-        } else {
+        } else if (!ghostMode) {
           const isUpper = targetGroundY > 1.8;
 
           const boxX = new THREE.Box3(

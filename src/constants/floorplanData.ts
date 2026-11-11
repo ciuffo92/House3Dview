@@ -238,15 +238,22 @@ export const GROUND_WALLS: WallDef[] = [
   // Parete Tecnico / Ripostiglio (Z = +2.8)
   { x1: -5.4, z1: 2.8, x2: -1.9, z2: 2.8, thickness: 0.16, hasDoor: true, doorPos: 0.5, doorWidth: 0.9, doorHeight: 2.15 },
   
-  // Vano Scala Piano Terra (muri laterali a protezione della rampa)
-  { x1: -0.2, z1: -0.8, x2: -0.2, z2: 1.8, thickness: 0.15 },
+  // Vano Scala Piano Terra (muro ovest con porta per accesso al sottoscala, muro est solido, fronte scala verso nord aperto)
+  { x1: -0.2, z1: -0.8, x2: -0.2, z2: 1.8, thickness: 0.15, hasDoor: true, doorPos: 0.35, doorWidth: 0.8, doorHeight: 2.05 },
   { x1: 1.0, z1: -0.8, x2: 1.0, z2: 1.8, thickness: 0.15 },
 
-  // Spina Est Alloggio Ospiti (X = +0.8)
-  { x1: 0.8, z1: 0.1, x2: 0.8, z2: 4.3, thickness: 0.18, hasDoor: true, doorPos: 0.4, doorWidth: 0.95, doorHeight: 2.15 },
-  // Bagno Ospiti WC (Z = +3.0, X: 0.8 a 2.0)
-  { x1: 0.8, z1: 3.0, x2: 2.0, z2: 3.0, thickness: 0.16, hasDoor: true, doorPos: 0.5, doorWidth: 0.85, doorHeight: 2.15 },
-  // Parete divisoria Alloggio Ospiti / Soggiorno (Z = 0.1, X: 1.0 a 5.4)
+  // Muro separazione tra Flur (ingresso principale) e Bagno WC ospiti sulla destra (ACCESSO DIRETTO DALL'INGRESSO)
+  { x1: 0.8, z1: 3.0, x2: 0.8, z2: 4.3, thickness: 0.18, hasDoor: true, doorPos: 0.5, doorWidth: 0.85, doorHeight: 2.15 },
+  // Parete divisoria Bagno Ospiti WC / Soggiorno Alloggio Ospiti a Nord (SOLIDA, isola il bagno dall'appartamentino)
+  { x1: 0.8, z1: 3.0, x2: 2.0, z2: 3.0, thickness: 0.16 },
+  // Parete chiusura Bagno Ospiti WC dal lato opposto all'entrata ad Est (SOLIDA, chiude completamente il WC)
+  { x1: 2.0, z1: 3.0, x2: 2.0, z2: 4.3, thickness: 0.16 },
+  // Spina separazione Casa Principale / Appartamentino Ospiti
+  // Tratto solido adiacente al vano scala (Z da 0.1 a 1.8)
+  { x1: 0.8, z1: 0.1, x2: 0.8, z2: 1.8, thickness: 0.18 },
+  // Fessura / porta di passaggio dall'ingresso principale (Flur) all'alloggio ospiti (Z da 1.8 a 3.0)
+  { x1: 0.8, z1: 1.8, x2: 0.8, z2: 3.0, thickness: 0.18, hasDoor: true, doorPos: 0.5, doorWidth: 0.9, doorHeight: 2.15 },
+  // Parete divisoria Alloggio Ospiti / Soggiorno Principale (Z = 0.1, X: 1.0 a 5.4)
   { x1: 1.0, z1: 0.1, x2: 5.4, z2: 0.1, thickness: 0.18 },
   // Bagno Alloggio Ospiti Ovest (X = 2.7, Z: 0.1 a 1.6)
   { x1: 2.7, z1: 0.1, x2: 2.7, z2: 1.6, thickness: 0.16, hasDoor: true, doorPos: 0.5, doorWidth: 0.85, doorHeight: 2.15 },
@@ -272,9 +279,9 @@ export const FIRST_WALLS: WallDef[] = [
   { x1: -5.4, z1: -0.8, x2: -5.4, z2: 1.2, isExterior: true, hasWindow: true, windowPos: 0.5, windowWidth: 1.4, windowHeight: 1.4, windowBottom: 0.9 },
   { x1: -5.4, z1: 1.2, x2: -5.4, z2: 4.3, isExterior: true, hasWindow: true, windowPos: 0.5, windowWidth: 1.6, windowHeight: 1.6, windowBottom: 0.8 },
 
-  // Muri Interni Primo Piano (TUTTI CON PORTE DI ACCESSO DEDICATE, AMPIE E PERFETTAMENTE ACCESSIBILI)
-  // 1. Parete Bagno Padronale da Galerie/Flur (X = -1.0, Z da -4.3 a -0.8): Porta per il Bagno
-  { x1: -1.0, z1: -4.3, x2: -1.0, z2: -0.8, thickness: 0.18, hasDoor: true, doorPos: 0.65, doorWidth: 0.95, doorHeight: 2.15 },
+  // Muri Interni Primo Piano (CON AMPIO SPAZIO DI ACCESSO DALLA GALLERIA E CORRIDOI)
+  // 1. Parete Bagno Padronale da Galerie/Flur (X = -1.0, Z da -4.3 a -0.8): Porta accessibile sul pianerottolo/galleria spaziosa
+  { x1: -1.0, z1: -4.3, x2: -1.0, z2: -0.8, thickness: 0.18, hasDoor: true, doorPos: 0.82, doorWidth: 0.95, doorHeight: 2.15 },
   // 2. Parete tra Bagno e Cabina Armadio (Z = -0.8, X: -5.4 a -1.0)
   { x1: -5.4, z1: -0.8, x2: -1.0, z2: -0.8, thickness: 0.16 },
   // 3. Parete Cabina Armadio da Flur (X = -1.0, Z da -0.8 a 1.2): Ampia apertura con porte per la cabina armadio
@@ -284,15 +291,15 @@ export const FIRST_WALLS: WallDef[] = [
   // 5. Parete Ingresso Camera Padronale Eltern da Flur Ovest (Z = 1.2, X: -1.0 a -0.2): Porta d'ingresso camera matrimoniale
   { x1: -1.0, z1: 1.2, x2: -0.2, z2: 1.2, thickness: 0.18, hasDoor: true, doorPos: 0.5, doorWidth: 0.75, doorHeight: 2.15 },
 
-  // 6. Parete Camera 1 (Kind I) da Galerie/Flur (X = 2.0, Z da -4.3 a -0.8): Porta d'ingresso Camera 1
-  { x1: 2.0, z1: -4.3, x2: 2.0, z2: -0.8, thickness: 0.18, hasDoor: true, doorPos: 0.65, doorWidth: 0.95, doorHeight: 2.15 },
+  // 6. Parete Camera 1 (Kind I) da Galerie/Flur (X = 2.0, Z da -4.3 a -0.8): Porta d'ingresso Camera 1 accessibile dalla galleria
+  { x1: 2.0, z1: -4.3, x2: 2.0, z2: -0.8, thickness: 0.18, hasDoor: true, doorPos: 0.82, doorWidth: 0.95, doorHeight: 2.15 },
   // 7. Parete tra Camera 1 e Studio Büro (Z = -0.8, X: 2.0 a 5.4)
   { x1: 2.0, z1: -0.8, x2: 5.4, z2: -0.8, thickness: 0.16 },
   // 8. Parete Studio Büro da Flur (X = 2.0, Z da -0.8 a 1.4): Porta d'ingresso Studio
   { x1: 2.0, z1: -0.8, x2: 2.0, z2: 1.4, thickness: 0.18, hasDoor: true, doorPos: 0.5, doorWidth: 0.95, doorHeight: 2.15 },
   // 9. Parete tra Studio e Camera 2 (Z = 1.4, X: 2.0 a 5.4)
   { x1: 2.0, z1: 1.4, x2: 5.4, z2: 1.4, thickness: 0.16 },
-  // 10. Parete Ingresso Camera 2 (Kind II) da Flur Est (Z = 1.4, X: 1.0 a 2.0): Porta d'ingresso Camera 2 (Completamente aperta e accessibile dal corridoio est!)
+  // 10. Parete Ingresso Camera 2 (Kind II) da Flur Est (Z = 1.4, X: 1.0 a 2.0): Porta d'ingresso Camera 2
   { x1: 1.0, z1: 1.4, x2: 2.0, z2: 1.4, thickness: 0.18, hasDoor: true, doorPos: 0.5, doorWidth: 0.85, doorHeight: 2.15 },
 
   // 11. Parete divisoria Camera Matrimoniale Eltern / Camera 2 Kind II a Sud (X = 0.0, Z da 1.8 a 4.3)

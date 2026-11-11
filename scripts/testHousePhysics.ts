@@ -207,32 +207,32 @@ if (!bueroBlocked) {
   console.log('[PASS] Doorway into Studio (Büro) along Z=0.3 is 100% open and navigable!');
 }
 
-// Doorway into Camera 1 (Kind I): Walk from hallway X=1.5 to X=2.7 along Z=-2.0
+// Doorway into Camera 1 (Kind I): Walk from gallery X=0.5 to X=2.7 along Z=-1.45 (door is centered at Z=-1.43)
 let kind1Blocked = false;
-for (let x = 1.5; x <= 2.7; x += 0.05) {
-  const result = checkCollisionAt(x, 3.0, -2.0);
+for (let x = 0.5; x <= 2.7; x += 0.05) {
+  const result = checkCollisionAt(x, 3.0, -1.45);
   if (result.collided) {
-    console.error(`[FAIL] Doorway to Camera 1 (Kind I) blocked at X=${x.toFixed(2)}, Z=-2.0 by box:`, result.box);
+    console.error(`[FAIL] Doorway to Camera 1 (Kind I) blocked at X=${x.toFixed(2)}, Z=-1.45 by box:`, result.box);
     kind1Blocked = true;
     break;
   }
 }
 if (!kind1Blocked) {
-  console.log('[PASS] Doorway into Camera 1 (Kind I) along Z=-2.0 is 100% open and navigable!');
+  console.log('[PASS] Doorway into Camera 1 (Kind I) along Z=-1.45 is 100% open and navigable!');
 }
 
-// Doorway into Master Bathroom (Bad): Walk from hallway X=-0.6 to X=-1.8 along Z=-2.0
+// Doorway into Master Bathroom (Bad): Walk from gallery X=0.0 to X=-1.8 along Z=-1.45 (door is centered at Z=-1.43)
 let badBlocked = false;
-for (let x = -0.6; x >= -1.8; x -= 0.05) {
-  const result = checkCollisionAt(x, 3.0, -2.0);
+for (let x = 0.0; x >= -1.8; x -= 0.05) {
+  const result = checkCollisionAt(x, 3.0, -1.45);
   if (result.collided) {
-    console.error(`[FAIL] Doorway to Master Bathroom (Bad) blocked at X=${x.toFixed(2)}, Z=-2.0 by box:`, result.box);
+    console.error(`[FAIL] Doorway to Master Bathroom (Bad) blocked at X=${x.toFixed(2)}, Z=-1.45 by box:`, result.box);
     badBlocked = true;
     break;
   }
 }
 if (!badBlocked) {
-  console.log('[PASS] Doorway into Master Bathroom (Bad) along Z=-2.0 is 100% open and navigable!');
+  console.log('[PASS] Doorway into Master Bathroom (Bad) along Z=-1.45 is 100% open and navigable!');
 }
 
 // Doorway into Walk-in Closet (Ankleide): Walk from hallway X=-0.6 to X=-2.0 along Z=0.2
@@ -249,8 +249,50 @@ if (!ankleiBlocked) {
   console.log('[PASS] Doorway into Walk-in Closet (Ankleide) along Z=0.2 is 100% open and navigable!');
 }
 
+// 1. Doorway into Understairs (Sottoscala) along Z=0.11: Walk from hallway X=-0.6 into X=0.2
+let understairsBlocked = false;
+for (let x = -0.6; x <= 0.2; x += 0.05) {
+  const result = checkCollisionAt(x, 0.0, 0.11);
+  if (result.collided) {
+    console.error(`[FAIL] Doorway to Understairs blocked at X=${x.toFixed(2)}, Z=0.11 by box:`, result.box);
+    understairsBlocked = true;
+    break;
+  }
+}
+if (!understairsBlocked) {
+  console.log('[PASS] Doorway into Understairs storage (Sottoscala) along Z=0.11 is 100% open and navigable!');
+}
+
+// 2. Direct entrance Doorway into tiny Guest WC from Entrance Hallway (Flur): Walk from hallway X=0.4 into WC X=1.3 along Z=3.65
+let guestWcBlocked = false;
+for (let x = 0.4; x <= 1.3; x += 0.05) {
+  const result = checkCollisionAt(x, 0.0, 3.65);
+  if (result.collided) {
+    console.error(`[FAIL] Doorway to Guest WC blocked at X=${x.toFixed(2)}, Z=3.65 by box:`, result.box);
+    guestWcBlocked = true;
+    break;
+  }
+}
+if (!guestWcBlocked) {
+  console.log('[PASS] Doorway into tiny Guest WC directly from Entrance Hallway along Z=3.65 is 100% open and navigable!');
+}
+
+// 3. Passage between Main House and Guest Apartment (Einliegerwohnung): Walk from X=0.4 to X=1.3 along Z=2.4
+let einliegerPassageBlocked = false;
+for (let x = 0.4; x <= 1.3; x += 0.05) {
+  const result = checkCollisionAt(x, 0.0, 2.4);
+  if (result.collided) {
+    console.error(`[FAIL] Passage to Guest Apartment blocked at X=${x.toFixed(2)}, Z=2.4 by box:`, result.box);
+    einliegerPassageBlocked = true;
+    break;
+  }
+}
+if (!einliegerPassageBlocked) {
+  console.log('[PASS] Passage into Guest Apartment along Z=2.4 is 100% open and navigable!');
+}
+
 console.log('\n=== TESTING AGENT SUMMARY ===');
-const allDoorsClear = !kind2Blocked && !elternBlocked && !bueroBlocked && !kind1Blocked && !badBlocked && !ankleiBlocked;
+const allDoorsClear = !kind2Blocked && !elternBlocked && !bueroBlocked && !kind1Blocked && !badBlocked && !ankleiBlocked && !understairsBlocked && !guestWcBlocked && !einliegerPassageBlocked;
 if (waypointFailures === 0 && !stairBlocked && allDoorsClear) {
   console.log('[SUCCESS] ALL TESTS PASSED! ZERO ERRORS DETECTED ACROSS ALL ROOMS, STAIRS, AND DOORS.');
 } else {

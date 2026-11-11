@@ -507,17 +507,32 @@ export function buildHouse(): HouseBuildResult {
   const stairRailLen = Math.hypot(totalRun, totalRise);
   const stairRailAngle = Math.atan2(totalRise, totalRun);
 
-  const handrailBar = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.025, 0.025, stairRailLen, 12),
-    frameMat
-  );
-  handrailBar.rotation.x = Math.PI / 2 + stairRailAngle;
-  handrailBar.position.set(
-    stairConfig.maxX - 0.04,
-    totalRise / 2 + 0.9,
+  // Sloped architectural drywall under-stairs soffit enclosing the understairs storage
+  const soffitGeo = new THREE.BoxGeometry(stairWidth - 0.02, 0.08, stairRailLen);
+  const soffitMesh = new THREE.Mesh(soffitGeo, wallMat);
+  soffitMesh.rotation.x = -stairRailAngle;
+  soffitMesh.position.set(
+    (stairConfig.minX + stairConfig.maxX) / 2,
+    totalRise / 2 - 0.14,
     (stairConfig.minZ + stairConfig.maxZ) / 2
   );
-  stairGroup.add(handrailBar);
+  stairGroup.add(soffitMesh);
+
+  // Under-stairs Storage (Sottoscala) Interior Fixtures
+  const underStairsGroup = new THREE.Group();
+  // Utility storage shelves
+  const shelfMesh = new THREE.Mesh(new THREE.BoxGeometry(0.35, 1.6, 0.9), lightOakMat);
+  shelfMesh.position.set(stairConfig.maxX - 0.22, 0.8, 0.1);
+  underStairsGroup.add(shelfMesh);
+
+  // Storage boxes on shelves
+  [-0.2, 0.2].forEach((bz) => {
+    const box = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.25, 0.3), frameMat);
+    box.position.set(stairConfig.maxX - 0.22, 0.9, 0.1 + bz);
+    underStairsGroup.add(box);
+  });
+
+  stairGroup.add(underStairsGroup);
 
   root.add(stairGroup);
 
@@ -583,13 +598,13 @@ export function buildHouse(): HouseBuildResult {
   addSlabBlock(stairConfig.maxX, HOUSE_DIMENSIONS.maxX, -0.8, HOUSE_DIMENSIONS.maxZ);
 
   // 3. Central Walkways & Landings
-  // 3a. North Stair Landing & Galerie Viewing Walkway: X from -1.0 to 2.0, Z from -1.3 to -0.8
-  // This connects the stair landing to Bad, Ankleide, Kind I, and provides the viewing balcony!
-  addSlabBlock(-1.0, 2.0, -1.3, -0.8);
+  // 3a. North Stair Landing & Galerie Viewing Walkway: X from -1.0 to 2.0, Z from -2.1 to -0.8
+  // This provides a generous 1.3m-wide walkway connecting the stair landing to Bad, Ankleide, Kind I!
+  addSlabBlock(-1.0, 2.0, -2.1, -0.8);
   // 3b. South Hallway between Eltern and Kind II: X from stairConfig.minX (-0.2) to stairConfig.maxX (1.0), Z from stairConfig.maxZ (1.8) to 4.3
   addSlabBlock(stairConfig.minX, stairConfig.maxX, stairConfig.maxZ, HOUSE_DIMENSIONS.maxZ);
 
-  // (Notice: Area X from -1.0 to 2.0, Z from -4.3 to -1.3 HAS NO SLAB -> OPEN DOUBLE-HEIGHT VOID over Essen dining table!)
+  // (Notice: Area X from -1.0 to 2.0, Z from -4.3 to -2.1 HAS NO SLAB -> OPEN DOUBLE-HEIGHT VOID over Essen dining table!)
   // (Notice: Area X from -0.2 to 1.0, Z from -0.8 to 1.8 HAS NO SLAB -> OPEN STAIRWELL SHAFT!)
 
   // Master Bathroom luxury Calacatta marble floor on 1st Floor
@@ -606,7 +621,7 @@ export function buildHouse(): HouseBuildResult {
 
   // First Floor Stairwell & Galerie safety glass balustrades:
   // Balustrades along WEST side (X = -0.2), EAST side (X = 1.0),
-  // and NORTH Galerie viewing balustrade overlooking the dining room below (Z = -1.3, X from -1.0 to 2.0)
+  // and NORTH Galerie viewing balustrade overlooking the dining room below (Z = -2.1, X from -1.0 to 2.0)
   const buildUpperGlassRailing = (x1: number, z1: number, x2: number, z2: number) => {
     const rLen = Math.hypot(x2 - x1, z2 - z1);
     const rAngle = Math.atan2(z2 - z1, x2 - x1);
@@ -628,7 +643,7 @@ export function buildHouse(): HouseBuildResult {
 
   buildUpperGlassRailing(stairConfig.minX, stairConfig.maxZ, stairConfig.minX, stairConfig.minZ); // West stair rail
   buildUpperGlassRailing(stairConfig.maxX, stairConfig.minZ, stairConfig.maxX, 1.4); // East stair rail up to Kind II door
-  buildUpperGlassRailing(-1.0, -1.3, 2.0, -1.3); // North viewing rail along Galerie walkway overlooking dining room below
+  buildUpperGlassRailing(-1.0, -2.1, 2.0, -2.1); // North viewing rail along Galerie walkway overlooking dining room below
 
   // Build First Floor Walls
   FIRST_WALLS.forEach((wall) => {
@@ -868,14 +883,85 @@ export function buildHouse(): HouseBuildResult {
   tubFaucet.position.set(1.9, 0.425, -1.0);
   bathGroup.add(tubFaucet);
 
-  // Walk-in Shower Enclosure with Rainfall Shower
-  const showerGlass = new THREE.Mesh(new THREE.BoxGeometry(1.2, 2.2, 1.0), glassMat);
-  showerGlass.position.set(-1.4, 1.1, 0.6);
-  bathGroup.add(showerGlass);
+  // --- Luxury Walk-in Italian Shower (Doccia Walk-In di Lusso) ---
+  const showerGroup = new THREE.Group();
+  showerGroup.position.set(-1.3, 0, 0.6);
 
-  const showerHead = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.14, 0.02, 16), frameMat);
-  showerHead.position.set(-1.4, 2.1, 0.6);
-  bathGroup.add(showerHead);
+  // 1. Flush Anthracite Slate Shower Tray (Piatto doccia a filo pavimento)
+  const showerTrayMat = new THREE.MeshStandardMaterial({
+    color: 0x1f2937,
+    roughness: 0.7,
+    metalness: 0.15,
+  });
+  const showerTray = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.03, 1.4), showerTrayMat);
+  showerTray.position.set(0, 0.015, 0);
+  showerTray.receiveShadow = true;
+  showerGroup.add(showerTray);
+
+  // Linear stainless steel trench drain
+  const drainMesh = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.008, 1.1), frameMat);
+  drainMesh.position.set(-0.45, 0.032, 0);
+  showerGroup.add(drainMesh);
+
+  // 2. Crystal Clear Walk-in Glass Screen with Minimalist Matte Black Frame
+  const showerGlass = new THREE.Mesh(new THREE.BoxGeometry(0.025, 2.2, 1.35), glassMat);
+  showerGlass.position.set(0.58, 1.1, 0);
+  showerGroup.add(showerGlass);
+
+  const showerFrameTop = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.04, 1.36), frameMat);
+  showerFrameTop.position.set(0.58, 2.2, 0);
+  showerGroup.add(showerFrameTop);
+
+  // Matte black overhead stabilizer support bar
+  const stabilizerBar = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.015, 0.9, 12), frameMat);
+  stabilizerBar.rotation.z = Math.PI / 2;
+  stabilizerBar.position.set(0.15, 2.15, 0.5);
+  showerGroup.add(stabilizerBar);
+
+  // 3. Ceiling-Mounted Luxury Square Rainfall Shower Head (32x32 cm)
+  const showerHead = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.025, 0.32), frameMat);
+  showerHead.position.set(0, 2.45, 0);
+  showerGroup.add(showerHead);
+
+  const showerPipe = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.018, 0.35, 12), frameMat);
+  showerPipe.position.set(0, 2.62, 0);
+  showerGroup.add(showerPipe);
+
+  // 4. Wall-Mounted Thermostatic Mixer Column & Hand Shower Wand
+  const mixerPlate = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.35, 0.14), frameMat);
+  mixerPlate.position.set(-0.58, 1.15, 0);
+  showerGroup.add(mixerPlate);
+
+  const handShowerBar = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, 0.75, 12), frameMat);
+  handShowerBar.position.set(-0.58, 1.25, 0.25);
+  showerGroup.add(handShowerBar);
+
+  const handWand = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.015, 0.22, 12), brassMat);
+  handWand.position.set(-0.56, 1.45, 0.25);
+  showerGroup.add(handWand);
+
+  // 5. Built-in Illuminated Wall Niche (Nicchia portaoggetti con LED)
+  const nicheBack = new THREE.Mesh(
+    new THREE.BoxGeometry(0.03, 0.35, 0.55),
+    new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.4 })
+  );
+  nicheBack.position.set(-0.58, 1.4, -0.35);
+  showerGroup.add(nicheBack);
+
+  // Shampoo & shower gel dispenser bottles
+  [-0.15, 0, 0.15].forEach((bz, idx) => {
+    const bottle = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.03, 0.03, 0.14, 12),
+      new THREE.MeshStandardMaterial({
+        color: idx === 0 ? 0xd97706 : idx === 1 ? 0x0284c7 : 0x059669,
+        roughness: 0.3,
+      })
+    );
+    bottle.position.set(-0.55, 1.32, -0.35 + bz);
+    showerGroup.add(bottle);
+  });
+
+  bathGroup.add(showerGroup);
 
   // Floating Double Vanity Unit with Twin Vessel Sinks
   const vanity = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.45, 0.55), walnutMat);
@@ -906,6 +992,49 @@ export function buildHouse(): HouseBuildResult {
 
   furnGroup.add(bathGroup);
   obstacleMeshes.push(tub, showerGlass, vanity);
+
+  // ------------------------------------------
+  // D2. GROUND FLOOR GUEST WC (Bagno Ospiti - 1.4 m² appena entri a destra)
+  // ------------------------------------------
+  const guestWcGroup = new THREE.Group();
+  guestWcGroup.position.set(1.4, 0, 3.65);
+
+  // Wall-hung toilet with soft-close seat
+  const guestToilet = new THREE.Mesh(
+    new THREE.BoxGeometry(0.38, 0.4, 0.52),
+    new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.15 })
+  );
+  guestToilet.position.set(0.3, 0.24, -0.35);
+  guestWcGroup.add(guestToilet);
+
+  // Dual-flush actuator plate
+  const flushPlate = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.12, 0.02), frameMat);
+  flushPlate.position.set(0.3, 0.85, -0.62);
+  guestWcGroup.add(flushPlate);
+
+  // Compact modern guest washbasin with black faucet
+  const guestVanity = new THREE.Mesh(new THREE.BoxGeometry(0.38, 0.35, 0.45), lightOakMat);
+  guestVanity.position.set(0.3, 0.48, 0.35);
+  guestWcGroup.add(guestVanity);
+
+  const guestSink = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.14, 0.12, 0.09, 16),
+    new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.15 })
+  );
+  guestSink.position.set(0.3, 0.7, 0.35);
+  guestWcGroup.add(guestSink);
+
+  const guestFaucet = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, 0.18, 12), frameMat);
+  guestFaucet.position.set(0.3, 0.82, 0.5);
+  guestWcGroup.add(guestFaucet);
+
+  // Vertical illuminated vanity mirror
+  const guestMirror = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.7, 0.02), frameMat);
+  guestMirror.position.set(0.3, 1.45, 0.58);
+  guestWcGroup.add(guestMirror);
+
+  furnGroup.add(guestWcGroup);
+  obstacleMeshes.push(guestToilet, guestVanity);
 
   // ------------------------------------------
   // E. WALK-IN CLOSET (Ankleidezimmer - 8 m²)
