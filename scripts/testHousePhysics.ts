@@ -100,22 +100,34 @@ for (const wp of testWaypoints) {
   }
 }
 
-// Test Ground Floor Living Room Path (Verifying no ground collisions when walking to living room)
+// Test Ground Floor Living Room Path (Entrance -> Hallway -> Open Dining -> Living Room)
 console.log('\n--- TESTING GROUND FLOOR LIVING ROOM PATH ---');
 let livingPathBlocked = false;
+
+// Segment 1: Walk north through hallway from Entrance Z=2.0 to Dining room Z=-2.0 at X=-0.5
 for (let z = 2.0; z >= -2.0; z -= 0.1) {
-  // Path from hall along X=2.0 into living room at X=3.4
-  const t = Math.max(0, Math.min(1, (1.0 - z) / 2.0));
-  const x = 1.5 + t * 1.9; // 1.5 to 3.4
-  const res = checkCollisionAt(x, 0.0, z);
+  const res = checkCollisionAt(-0.5, 0.0, z);
   if (res.collided) {
-    console.error(`[FAIL] Ground path to living room blocked at X=${x.toFixed(2)}, Z=${z.toFixed(2)} by box:`, res.box);
+    console.error(`[FAIL] Hallway to Dining blocked at X=-0.5, Z=${z.toFixed(2)} by box:`, res.box);
     livingPathBlocked = true;
     break;
   }
 }
+
+// Segment 2: Walk east from Dining X=-0.5 to Living Room X=3.4 at Z=-2.0
 if (!livingPathBlocked) {
-  console.log('[PASS] Ground floor walk from Entrance into Living Room is completely clear and unblocked!');
+  for (let x = -0.5; x <= 3.4; x += 0.1) {
+    const res = checkCollisionAt(x, 0.0, -2.0);
+    if (res.collided) {
+      console.error(`[FAIL] Open plan Dining to Living blocked at X=${x.toFixed(2)}, Z=-2.0 by box:`, res.box);
+      livingPathBlocked = true;
+      break;
+    }
+  }
+}
+
+if (!livingPathBlocked) {
+  console.log('[PASS] Ground floor walk from Entrance through Dining into Living Room is 100% clear and unblocked!');
 }
 
 // 2. Test Step-by-Step Stair Ascent
