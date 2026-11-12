@@ -597,13 +597,13 @@
       houseGroup.add(riser);
     }
 
-    // Chiusura soffitto sottoscala inclinato
-    const soffitLen = Math.hypot(stairZ2 - stairZ1, 3.0);
-    const soffitAng = Math.atan2(3.0, stairZ2 - stairZ1);
-    const underSoffit = new THREE.Mesh(new THREE.BoxGeometry(stairW, 0.08, soffitLen), wallMat);
-    underSoffit.rotation.x = -soffitAng;
-    underSoffit.position.set((stairX1 + stairX2) / 2, 1.5 - 0.14, (stairZ1 + stairZ2) / 2);
-    houseGroup.add(underSoffit);
+    // Chiusura sottoscala verticale dritta che chiude verso la zona pranzo e finisce col pavimento del secondo piano
+    const underWallThickness = 0.12;
+    const underWallHeight = 2.8;
+    const understairsWall = new THREE.Mesh(new THREE.BoxGeometry(stairW, underWallHeight, underWallThickness), wallMat);
+    understairsWall.position.set((stairX1 + stairX2) / 2, underWallHeight / 2, stairZ1 - underWallThickness / 2);
+    understairsWall.receiveShadow = true;
+    houseGroup.add(understairsWall);
 
     const handrail = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, soffitLen, 12), frameMat);
     handrail.rotation.x = Math.PI / 2 + soffitAng;

@@ -507,19 +507,27 @@ export function buildHouse(): HouseBuildResult {
   const stairRailLen = Math.hypot(totalRun, totalRise);
   const stairRailAngle = Math.atan2(totalRise, totalRun);
 
-  // Sloped architectural drywall under-stairs soffit enclosing the understairs storage
-  const soffitGeo = new THREE.BoxGeometry(stairWidth - 0.02, 0.08, stairRailLen);
-  const soffitMesh = new THREE.Mesh(soffitGeo, wallMat);
-  soffitMesh.rotation.x = -stairRailAngle;
-  soffitMesh.position.set(
-    (stairConfig.minX + stairConfig.maxX) / 2,
-    totalRise / 2 - 0.14,
-    (stairConfig.minZ + stairConfig.maxZ) / 2
-  );
-  stairGroup.add(soffitMesh);
-
-  // Under-stairs Storage (Sottoscala) Interior Fixtures
+  // Under-stairs Storage (Sottoscala)
   const underStairsGroup = new THREE.Group();
+
+  // Straight vertical wall closing the under-stairs storage facing the dining room
+  // Exactly flush with the first floor ceiling slab (Y = 0 to Y = 2.8), never protruding into the upper floor!
+  const underWallThickness = 0.12;
+  const underWallHeight = HOUSE_DIMENSIONS.firstFloorY - HOUSE_DIMENSIONS.slabThickness; // 2.8m
+  const understairsWall = new THREE.Mesh(
+    new THREE.BoxGeometry(stairWidth, underWallHeight, underWallThickness),
+    wallMat
+  );
+  understairsWall.position.set(
+    (stairConfig.minX + stairConfig.maxX) / 2,
+    underWallHeight / 2,
+    stairConfig.minZ - underWallThickness / 2
+  );
+  understairsWall.castShadow = true;
+  understairsWall.receiveShadow = true;
+  underStairsGroup.add(understairsWall);
+  obstacleMeshes.push(understairsWall);
+
   // Utility storage shelves
   const shelfMesh = new THREE.Mesh(new THREE.BoxGeometry(0.35, 1.6, 0.9), lightOakMat);
   shelfMesh.position.set(stairConfig.maxX - 0.22, 0.8, 0.1);
@@ -1135,16 +1143,11 @@ export function buildHouse(): HouseBuildResult {
   laptop1.position.set(-0.5, 0.75, -1.35);
   kind1Group.add(laptop1);
 
-  // --- EMPRE (Mezzanine Loft) ---
+  // --- EMPRE (Mezzanine Loft - Open like the other two rooms) ---
   const loft1 = new THREE.Mesh(new THREE.BoxGeometry(1.4, 0.12, 3.2), lightOakMat);
   loft1.position.set(0.9, 1.7, 0); // Elevated platform
   loft1.castShadow = true;
   kind1Group.add(loft1);
-
-  // Wooden slatted loft railing
-  const loftRail1 = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.7, 3.2), lightOakMat);
-  loftRail1.position.set(0.2, 2.05, 0);
-  kind1Group.add(loftRail1);
 
   // Wooden Ladder up to loft
   const ladder1 = new THREE.Mesh(new THREE.BoxGeometry(0.38, 1.85, 0.08), lightOakMat);
